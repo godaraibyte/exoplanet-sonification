@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exoplanet System Sonification</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+            color: #ffffff;
+        }
+        p.subtitle {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .file-upload-section {
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 10px auto;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .btn {
+            background-color: var(--accent);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+        .btn:disabled {
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+        .status-msg {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 500;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 600px) {
+            .controls-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .system-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .artistic-notice {
+            font-size: 0.8rem;
+            color: var(--warning);
+            background-color: rgba(210, 153, 34, 0.1);
+            border: 1px solid rgba(210, 153, 34, 0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 16px;
+            line-height: 1.4;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Exoplanet System Sonification</h1>
+        <p class="subtitle">An interactive acoustic exploration of multi-planet orbital periods</p>
+    </header>
+
+    <div id="upload-card" class="card">
+        <label>Load Dataset</label>
+        <div class="file-upload-section">
+            <div style="font-weight: 600; color: var(--text-main); margin-bottom: 8px;">Select your local dataset.csv file</div>
+            <input type="file" id="csvFileInput" accept=".csv">
+        </div>
+        <div id="uploadStatus" class="status-msg">Waiting for dataset.csv file selection...</div>
+    </div>
+
+    <div id="app-card" class="card hidden">
+        <div class="controls-grid">
+            <div>
+                <label for="systemSelect">Select Multi-Planet Host Star</label>
+                <select id="systemSelect" disabled></select>
+                <div id="systemStats" class="system-info"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                <button id="playBtn" class="btn" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Play Sequence
+                </button>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <label>Planets in Selected System (Ordered by Orbital Period)</label>
+            <div style="overflow-x: auto;">
+                <table id="planetTable">
+                    <thead>
+                        <tr>
+                            <th>Planet Name</th>
+                            <th>Orbital Period (days)</th>
+                            <th>Radius (R<sub>🜨</sub>)</th>
+                            <th>Mass (M<sub>🜨</sub>)</th>
+                            <th>Assigned Pitch (Hz)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planetTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="artistic-notice">
+            <strong>Scientific Caution & Artistic Mapping Note:</strong> Space is a vacuum and does not transmit these notes; this sonification is a creative artistic interpretation. Orbital periods are derived directly from known measurements in the NASA Exoplanet Archive (`default_flag = 1`), where shorter periods map to higher musical pitches and longer periods map to lower pitches. Missing measurements are unknown, not zero.
+        </div>
+    </div>
+</div>
+
+<script>
+    let planetData = [];
+    let audioCtx = null;
+    let hostMapGlobal = {};
+
+    const csvFileInput = document.getElementById('csvFileInput');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadCard = document.getElementById('upload-card');
+    const appCard = document.getElementById('app-card');
+    const systemSelect = document.getElementById('systemSelect');
+    const systemStats = document.getElementById('systemStats');
+    const playBtn = document.getElementById('playBtn');
+    const planetTableBody = document.getElementById('planetTableBody');
+
+    csvFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        uploadStatus.textContent = "Reading file into memory...";
+        uploadStatus.style.color = "var(--text-muted)";
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            uploadStatus.textContent = "Parsing CSV records...";
+            setTimeout(() => {
+                try {
+                    parseCSVFast(event.target.result);
+                } catch (err) {
+                    uploadStatus.textContent = "Error parsing CSV file: " + err.message;
+                    uploadStatus.style.color = "var(--error)";
+                    console.error(err);
+                }
+            }, 50);
+        };
+        reader.onerror = function() {
+            uploadStatus.textContent = "Failed to read file.";
+            uploadStatus.style.color = "var(--error)";
+        };
+        reader.readAsText(file);
+    });
+
+    function parseCSVFast(text) {
+        let lines = text.split(/\r\n|\n/);
+        if (lines.length < 2) {
+            throw new Error("CSV file is empty or invalid.");
+        }
+
+        let headers = parseCSVLine(lines[0]).map(h => h.trim());
+
+        const idxName = headers.indexOf('pl_name');
+        const idxHost = headers.indexOf('hostname');
+        const idxPeriod = headers.indexOf('pl_orbper');
+        const idxRad = headers.indexOf('pl_rade');
+        const idxMass = headers.indexOf('pl_bmasse');
+        const idxDefault = headers.indexOf('default_flag');
+
+        if (idxName === -1 || idxHost === -1 || idxPeriod === -1 || idxDefault === -1) {
+            throw new Error("Required columns (pl_name, hostname, pl_orbper, default_flag) missing from CSV.");
+        }
+
+        planetData = [];
+        for (let i = 1; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+
+            let cols = parseCSVLine(line);
+            if (cols.length <= Math.max(idxName, idxHost, idxPeriod, idxDefault)) continue;
+
+            let defaultFlag = parseInt(cols[idxDefault], 10);
+            if (defaultFlag === 1) {
+                let name = cols[idxName].trim();
+                let host = cols[idxHost].trim();
+                let period = parseFloat(cols[idxPeriod]);
+                let rad = (idxRad !== -1 && cols[idxRad] !== '') ? parseFloat(cols[idxRad]) : NaN;
+                let mass = (idxMass !== -1 && cols[idxMass] !== '') ? parseFloat(cols[idxMass]) : NaN;
+
+                if (host && !isNaN(period) && period > 0) {
+                    planetData.push({
+                        name: name,
+                        host: host,
+                        period: period,
+                        radius: rad,
+                        mass: mass
+                    });
+                }
+            }
+        }
+
+        initApplication();
+    }
+
+    function parseCSVLine(text) {
+        let row = [];
+        let inQuotes = false;
+        let field = '';
+        for (let i = 0; i < text.length; i++) {
+            let c = text[i];
+            let nextC = text[i+1];
+            if (c === '"') {
+                if (inQuotes && nextC === '"') {
+                    field += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c === ',' && !inQuotes) {
+                row.push(field);
+                field = '';
+            } else {
+                field += c;
+            }
+        }
+        row.push(field);
+        return row;
+    }
+
+    function initApplication() {
+        uploadStatus.textContent = `Successfully loaded ${planetData.length} confirmed planets (default_flag = 1).`;
+        uploadStatus.style.color = "var(--success)";
+        uploadCard.classList.add('hidden');
+        appCard.classList.remove('hidden');
+
+        hostMapGlobal = {};
+        planetData.forEach(p => {
+            if (!hostMapGlobal[p.host]) hostMapGlobal[p.host] = [];
+            hostMapGlobal[p.host].push(p);
+        });
+
+        const multiSystems = Object.keys(hostMapGlobal).filter(host => hostMapGlobal[host].length >= 2);
+        multiSystems.sort((a, b) => hostMapGlobal[b].length - hostMapGlobal[a].length);
+
+        systemSelect.innerHTML = '';
+        multiSystems.forEach(host => {
+            let opt = document.createElement('option');
+            opt.value = host;
+            opt.textContent = `${host} (${hostMapGlobal[host].length} planets)`;
+            systemSelect.appendChild(opt);
+        });
+
+        systemSelect.disabled = false;
+        playBtn.disabled = false;
+
+        if (multiSystems.length > 0) {
+            systemSelect.value = multiSystems[0];
+            updateSystemView();
+        }
+    }
+
+    systemSelect.addEventListener('change', () => {
+        updateSystemView();
+    });
+
+    function getSelectedSystemPlanets() {
+        const host = systemSelect.value;
+        let planets = hostMapGlobal[host] || [];
+        planets.sort((a, b) => a.period - b.period);
+        return planets;
+    }
+
+    function updateSystemView() {
+        const planets = getSelectedSystemPlanets();
+        systemStats.textContent = `Showing ${planets.length} confirmed planets orbiting ${systemSelect.value}.`;
+
+        const minP = planets[0].period;
+        const maxP = planets[planets.length - 1].period;
+
+        planetTableBody.innerHTML = '';
+        planets.forEach((p) => {
+            let freq;
+            if (minP === maxP) {
+                freq = 440;
+            } else {
+                let ratio = (p.period - minP) / (maxP - minP);
+                freq = 880 - ratio * (880 - 220);
+            }
+            p.assignedFreq = Math.round(freq);
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${escapeHTML(p.name)}</strong></td>
+                <td>${p.period.toFixed(3)}</td>
+                <td>${!isNaN(p.radius) ? p.radius.toFixed(2) : 'Unknown'}</td>
+                <td>${!isNaN(p.mass) ? p.mass.toFixed(2) : 'Unknown'}</td>
+                <td>${p.assignedFreq} Hz</td>
+            `;
+            planetTableBody.appendChild(tr);
+        });
+    }
+
+    playBtn.addEventListener('click', function() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const planets = getSelectedSystemPlanets();
+        if (planets.length === 0) return;
+
+        playBtn.disabled = true;
+        playBtn.textContent = "Playing Sequence...";
+
+        let now = audioCtx.currentTime;
+        let noteDuration = 0.4;
+        let interval = 0.5;
+
+        planets.forEach((p, idx) => {
+            let startTime = now + (idx * interval);
+            playTone(p.assignedFreq, startTime, noteDuration);
+        });
+
+        setTimeout(() => {
+            playBtn.disabled = false;
+            playBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Play Sequence
+            `;
+        }, (planets.length * interval + noteDuration) * 1000);
+    });
+
+    function playTone(freq, time, duration) {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, time);
+
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(time);
+        osc.stop(time + duration);
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+</script>
+
+</body>
+</html>
